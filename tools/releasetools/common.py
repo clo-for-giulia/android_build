@@ -1001,7 +1001,10 @@ def LoadInfoDict(input_file, repacking=False):
       pass
 
   try:
-    d["ab_partitions"] = read_helper("META/ab_partitions.txt").split("\n")
+    d["ab_partitions"] = [
+        line.strip() for line in read_helper("META/ab_partitions.txt").splitlines()
+        if line.strip()
+    ]
   except KeyError:
     logger.warning("Can't find META/ab_partitions.txt")
   return d

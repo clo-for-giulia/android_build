@@ -222,19 +222,29 @@ def UpdateDeviceState(device_state, build_info, boot_variable_values,
       partition_devices = set()
       partition_fingerprints = set()
       for runtime_build_info in build_info_set:
-        partition_devices.add(
-            runtime_build_info.GetPartitionBuildProp('ro.product.device',
-                                                     partition))
-        partition_fingerprints.add(
-            runtime_build_info.GetPartitionFingerprint(partition))
+        try:
+          dev = runtime_build_info.GetPartitionBuildProp('ro.product.device',
+                                                         partition)
+          if dev:
+            partition_devices.add(dev)
+        except common.ExternalError:
+          pass
+        fp = runtime_build_info.GetPartitionFingerprint(partition)
+        if fp:
+          partition_fingerprints.add(fp)
 
       partition_state.device.extend(sorted(partition_devices))
       partition_state.build.extend(sorted(partition_fingerprints))
 
       # TODO(xunchang) set the boot image's version with kmi. Note the boot
       # image doesn't have a file map.
-      partition_state.version = build_info.GetPartitionBuildProp(
-          'ro.build.date.utc', partition)
+      try:
+        version = build_info.GetPartitionBuildProp(
+            'ro.build.date.utc', partition)
+        if version:
+          partition_state.version = version
+      except common.ExternalError:
+        pass
 
   # TODO(xunchang), we can save a call to ComputeRuntimeBuildInfos.
   build_devices, build_fingerprints = \
@@ -465,8 +475,10 @@ def CalculateRuntimeDevicesAndFingerprints(default_build_info,
   build_info_set = ComputeRuntimeBuildInfos(default_build_info,
                                             boot_variable_values)
   for runtime_build_info in build_info_set:
-    device_names.add(runtime_build_info.device)
-    fingerprints.add(runtime_build_info.fingerprint)
+    if runtime_build_info.device:
+      device_names.add(runtime_build_info.device)
+    if runtime_build_info.fingerprint:
+      fingerprints.add(runtime_build_info.fingerprint)
   return device_names, fingerprints
 
 
